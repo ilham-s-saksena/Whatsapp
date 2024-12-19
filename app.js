@@ -1,15 +1,26 @@
+require('dotenv').config(); // Tambahkan dotenv untuk membaca file .env
 const express = require('express');
 const { makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode'); // Tambahkan modul qrcode untuk menghasilkan gambar QR
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const API_KEY = process.env.API_KEY; // Baca API key dari file .env
 
 let socket;
 
 // Middleware untuk parsing JSON body request
 app.use(express.json());
+
+// Middleware untuk memeriksa API key
+app.use((req, res, next) => {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || apiKey !== API_KEY) {
+        return res.status(401).json({ message: 'Unauthorized: Invalid API Key' });
+    }
+    next();
+});
 
 async function connectToWhatsapp() {
     try {
