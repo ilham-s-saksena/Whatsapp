@@ -117,4 +117,4 @@ app.post('/send-message', async (req, res) => {
 app.listen(PORT, () => {
     connectToWhatsapp(); // Memastikan WhatsApp selalu terhubung saat server diaktifkan
 });
-connectToWhatsapp(); // Memastikan WhatsApp selalu terhubung saat server diaktifkan
+// connectToWhatsapp(); // Memastikan WhatsApp selalu terhubung saat server diaktifkan
