@@ -45,7 +45,7 @@ async function connectToWhatsapp() {
                 console.log('WhatsApp connection closed. Reconnecting...');
                 connectToWhatsapp(); // Reconnect on connection close
             } else if (connection === 'connecting') {
-                console.log('Connecting to WhatsApp...');
+                console.log('.');
             }
         });
 
@@ -70,6 +70,21 @@ app.get('/login', async (req, res) => {
     }
 });
 
+async function waitForConnection(timeout = 60000, interval = 5000) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+        if (socket) {
+            // Jika socket sudah terhubung, keluar dari loop
+            return true;
+        }
+        await new Promise(resolve => setTimeout(resolve, interval)); // Tunggu beberapa detik sebelum mengecek lagi
+    }
+
+    return false; // Jika sudah 1 menit tetapi tidak terhubung, return false
+}
+
+
 // Endpoint untuk mengirim pesan
 app.post('/send-message', async (req, res) => {
     const { phoneNumber, message } = req.body;
@@ -79,20 +94,27 @@ app.post('/send-message', async (req, res) => {
     }
 
     try {
-        if (!socket) {
-            return res.status(500).json({ message: 'WhatsApp is not connected' });
+        const { phoneNumber, message } = req.body;
+
+        // Tunggu hingga koneksi socket selama 1 menit
+        const isConnected = await waitForConnection();
+
+        if (!isConnected) {
+            return res.status(500).json({ message: 'WhatsApp is not connected after 1 minute' });
         }
 
         const jid = `${phoneNumber}@s.whatsapp.net`;
         await socket.sendMessage(jid, { text: message });
         res.status(200).json({ message: 'Message sent successfully' });
+
     } catch (error) {
-        res.status(500).json({ message: 'Failed to send message', error: error.message });
+        console.error('Error sending message:', error);
+        res.status(500).json({ message: 'An error occurred while sending the message', error: error.message });
     }
 });
 
 // Memulai server Express
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
     connectToWhatsapp(); // Memastikan WhatsApp selalu terhubung saat server diaktifkan
 });
+connectToWhatsapp(); // Memastikan WhatsApp selalu terhubung saat server diaktifkan
