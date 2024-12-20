@@ -26,7 +26,7 @@ async function connectToWhatsapp() {
     try {
         const authState = await useMultiFileAuthState('session');
         socket = makeWASocket({
-            browser: ['Linux', 'Mozilla', '24.04'],
+            browser: ["Bot Klinik", "Desktop", "1.0.10"],
             auth: authState.state,
             logger: pino({ level: 'silent' })
         });
@@ -51,7 +51,63 @@ async function connectToWhatsapp() {
 
         socket.ev.on('messages.upsert', async ({ messages }) => {
             console.log('New message received:', messages);
+
+            // Add Spesify Listener
+            const gid = "6285867738032-1527264404@g.us"
             
+            if (
+                messages[0].key.remoteJid == gid &&             // Listen to group
+                messages[0].message.liveLocationMessage         // Listen the LiveLocation Chat
+                // && !messages[0].key.fromMe  
+            ) {
+                const phoneWithDomain = messages[0].key.participant;
+                const phone = phoneWithDomain.split('@')[0];
+                const lon = messages[0].message.liveLocationMessage.degreesLongitude;
+                const lat = messages[0].message.liveLocationMessage.degreesLatitude;
+
+                const requestBody = {
+                    longitude: lon,
+                    latitude: lat,
+                    phone: phone
+                };
+
+                const url = 'https://jobs.e-ticketing.id';
+
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const result = await response.json();
+
+                if (result.status) {
+                    const messageText = `
+✅Absensi Berhhasil!✅
+
+Absensi atas nama *${result.name}* Berhasil!
+${result.message}
+
+Terimaksih
+                    `;
+                    await socket.sendMessage(messages[0].key.remoteJid, { text: messageText }, { quoted: messages[0] })
+                } else {
+                    const messageText = `
+🚫Absensi Gagal🚫
+
+Absensi atas nama *${result.name}* Gagal dilakukan
+${result.message}
+
+Terimaksih
+                    `;
+                await socket.sendMessage(messages[0].key.remoteJid, { text: messageText }, { quoted: messages[0] })
+                }
+                
+
+            }
 
             if (!messages[0].key.fromMe && messages[0].message.liveLocationMessage && messages[0].key.remoteJid == '6285134564592@s.whatsapp.net') {
                 console.log("=================================");
