@@ -180,7 +180,7 @@ app.post('/send-message', async (req, res) => {
 
     } catch (error) {
         console.error('Error sending message:', error);
-        res.status(500).json({ message: 'An error occurred while sending the message', error: error.message });
+        res.status(500).json({ message: 'An error occurred while sending the message', error: error.message, detail: error });
     }
 });
 
