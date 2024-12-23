@@ -184,6 +184,22 @@ app.post('/send-message', async (req, res) => {
     }
 });
 
+app.post('/keep-active-one-hour', async (req, res) => {
+    try {
+        const { phoneNumber, message } = req.body;
+        const isConnected = await waitForConnection();
+        if (!isConnected) {
+            return res.status(500).json({ message: 'WhatsApp is not connected after 1 minute' });
+        }
+        const jid = `6281228335448@s.whatsapp.net`;
+        await socket.sendMessage(jid, { text: "." });
+        res.status(200).json({ message: 'Message sent successfully' });
+    } catch (error) {
+        console.error('Error sending message:', error);
+        res.status(500).json({ message: 'An error occurred while sending the message', error: error.message, detail: error });
+    }
+});
+
 // Endpoint untuk mengirim pesan
 app.post('/send-location', async (req, res) => {
     const { phoneNumber, lon, lat } = req.body;
